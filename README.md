@@ -1,6 +1,10 @@
 # AI Knowledge Inbox
 
-A lightweight AI-powered knowledge management application that lets users save personal notes and web pages, search their knowledge semantically, and ask questions using Retrieval-Augmented Generation (RAG).
+A lightweight AI-powered knowledge management application that lets users save personal notes and web pages, search their knowledge semantically, and ask questions using Retrieval-Augmented Generation (RAG
+
+🚀 **[Live Application – Try it here](https://turium-ai-knowledge-inbox.vercel.app/)**
+
+💻 **[GitHub Repository](https://github.com/Keerthivallabhaneni2k3/turium-ai-knowledge-inbox)**
 
 ## Features
 
