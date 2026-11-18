@@ -1,57 +1,75 @@
 # AI Knowledge Inbox
 
-A lightweight AI-powered knowledge management application that allows users to save notes and web pages, search their saved knowledge semantically, and ask questions using Retrieval-Augmented Generation (RAG).
+A lightweight AI-powered knowledge management application that lets users save personal notes and web pages, search their knowledge semantically, and ask questions using Retrieval-Augmented Generation (RAG).
 
 ## Features
 
-- **Save notes:** Add text-based notes to your personal knowledge library.
-- **Save web pages:** Submit a URL and extract readable webpage content.
-- **Knowledge library:** View, edit, and delete saved notes and web pages.
-- **Semantic search:** Retrieve relevant content based on meaning rather than exact keyword matches.
+- **Save notes:** Add text-based notes to a personal knowledge library.
+- **Save web pages:** Submit URLs and extract readable webpage content.
+- **Manage knowledge:** View, edit, and delete saved notes and web pages.
+- **Semantic search:** Retrieve relevant information based on meaning rather than exact keyword matches.
 - **AI-powered Q&A:** Ask questions about saved content and receive context-aware answers.
 - **Source citations:** View supporting source snippets alongside generated answers.
+- **Persistent storage:** Store knowledge items, text chunks, and embeddings in SQLite.
 
 ## Tech Stack
 
-| Layer          | Technologies                              |
-| -------------- | ----------------------------------------- |
-| Frontend       | React 19, Vite                            |
-| Backend        | Node.js, Express 5                        |
-| AI / LLM       | Google Gemini API                         |
-| Embeddings     | Gemini Embedding (`gemini-embedding-001`) |
-| Database       | SQLite (`better-sqlite3`)                 |
-| Web extraction | Cheerio                                   |
-| Development    | Nodemon                                   |
+| Layer | Technologies |
+|---|---|
+| Frontend | React 19, Vite 8 |
+| Backend | Node.js, Express 5 |
+| AI / LLM | Google Gemini API |
+| Embedding model | `gemini-embedding-001` |
+| Answer generation | `gemini-3.5-flash-lite` |
+| Database | SQLite, `better-sqlite3` |
+| Web extraction | Cheerio |
+| Development | Nodemon | Oxlint
 
 ## Project Structure
 
 ```text
 turium-ai-knowledge-inbox/
 ├── client/
-│   └── src/
-│       ├── App.jsx
-│       ├── App.css
-│       ├── index.css
-│       └── main.jsx
+│   ├── public/
+│   │   ├── favicon.svg
+│   │   └── icons.svg
+│   ├── src/
+│   │   ├── assets/
+│   │   │   └── hero.png
+│   │   ├── components/
+│   │   │   ├── ChatPanel.jsx
+│   │   │   ├── EditModal.jsx
+│   │   │   ├── Footer.jsx
+│   │   │   ├── Header.jsx
+│   │   │   ├── Hero.jsx
+│   │   │   ├── LibraryStats.jsx
+│   │   │   ├── Notification.jsx
+│   │   │   ├── SaveKnowledge.jsx
+│   │   │   └── SavedKnowledge.jsx
+│   │   ├── services/
+│   │   │   └── api.js
+│   │   ├── App.jsx
+│   │   ├── App.css
+│   │   ├── index.css
+│   │   └── main.jsx
+│   ├── index.html
+│   ├── package.json
+│   └── vite.config.js
 │
 ├── server/
 │   ├── controllers/
-│   │   ├── itemController.js
-│   │   └── queryController.js
 │   ├── database/
 │   │   └── db.js
 │   ├── routes/
-│   │   └── itemRoutes.js
 │   ├── services/
-│   │   ├── answerService.js
-│   │   ├── chunkingService.js
-│   │   ├── embeddingService.js
-│   │   ├── indexingService.js
-│   │   ├── searchService.js
-│   │   └── urlService.js
-│   ├── .gitignore
-│   └── server.js
+│   ├── utils/
+│   │   └── logger.js
+│   ├── indexExistingItems.js
+│   ├── testSearch.js
+│   ├── server.js
+│   └── package.json
 │
+├── .gitignore
 └── README.md
 ```
 
@@ -60,7 +78,7 @@ turium-ai-knowledge-inbox/
 ### Prerequisites
 
 - Node.js and npm
-- Google Gemini API key
+- A Google Gemini API key
 
 ### 1. Clone the repository
 
@@ -89,13 +107,13 @@ Start the backend:
 npm run dev
 ```
 
-The backend will run at:
+The backend runs at:
 
 `http://localhost:5001`
 
 ### 3. Set up the frontend
 
-Open another terminal:
+Open a second terminal from the project root:
 
 ```bash
 cd client
@@ -103,9 +121,15 @@ npm install
 npm run dev
 ```
 
-The frontend runs at `http://localhost:5173` and communicates with the backend at `http://localhost:5001`.
+The frontend runs at:
+
+`http://localhost:5173`
+
+The frontend communicates with the backend at `http://localhost:5001` by default.
 
 ## API Documentation
+
+All endpoints are served by the Express backend.
 
 ### Save a text note
 
@@ -129,10 +153,10 @@ Request:
 ```json
 {
   "url": "https://example.com"
-}![alt text](image.png)
+}
 ```
 
-The backend extracts webpage content, saves it, and generates embeddings for semantic retrieval.
+The backend fetches the webpage, extracts its readable content, stores the item, and generates searchable chunks and embeddings.
 
 ### Retrieve saved items
 
@@ -151,6 +175,8 @@ Request:
   "question": "What information is available about my saved topic?"
 }
 ```
+
+Example response:
 
 ```json
 {
@@ -171,7 +197,7 @@ Request:
 }
 ```
 
-The response includes the generated answer and supporting source information.
+The response contains the generated answer and supporting source information.
 
 ### Update a saved item
 
@@ -186,56 +212,58 @@ Request:
 }
 ```
 
-The item's searchable chunks and embeddings are rebuilt.
+The item is updated and its searchable chunks and embeddings are regenerated.
 
 ### Delete a saved item
 
 **DELETE** `/items/:id`
 
-Deletes the saved item and its associated chunks.
+Deletes the selected item and its associated chunks.
 
 ## How RAG Works
 
-The application uses Retrieval-Augmented Generation to answer questions using the user's saved knowledge.
+The application uses Retrieval-Augmented Generation (RAG) to answer questions using the user's saved knowledge.
 
-1. **Content ingestion:** Notes and webpage content are stored in SQLite with source metadata.
-2. **Text chunking:** Content is divided into chunks of approximately 1,000 characters, with a 150-character overlap to preserve context between adjacent chunks.
-3. **Embedding generation:** Gemini generates 768-dimensional embeddings using `gemini-embedding-001`.
-4. **Vector storage:** Embeddings are serialized and stored alongside their corresponding text chunks in SQLite.
-5. **Semantic retrieval:** The user's question is converted into an embedding. Cosine similarity is calculated against stored chunk embeddings, and the five highest-scoring chunks are retrieved.
-6. **Relevance filtering:** Retrieved chunks with a similarity score below 0.60 are excluded.
-7. **Answer generation:** Relevant chunks and the user's question are passed to Gemini, which generates an answer using the provided context and numbered source citations.
+1. **Content ingestion:** Notes and extracted webpage content are stored in SQLite along with their source metadata.
+2. **Text chunking:** Content is divided into manageable chunks of approximately 1,000 characters, with an overlap of approximately 150 characters to preserve context between adjacent chunks.
+3. **Embedding generation:** Gemini's `gemini-embedding-001` model generates 768-dimensional embeddings for each chunk.
+4. **Vector storage:** Embeddings are serialized and stored in SQLite alongside their corresponding text chunks.
+5. **Query embedding:** When a user asks a question, the same embedding model converts the question into a vector.
+6. **Semantic retrieval:** Cosine similarity is calculated between the question embedding and stored chunk embeddings. The five highest-scoring chunks are considered.
+7. **Relevance filtering:** Chunks with a similarity score below 0.60 are excluded from the retrieved context.
+8. **Answer generation:** The remaining relevant chunks and the question are passed to Gemini's `gemini-3.5-flash-lite` model to generate an answer with numbered source citations.
 
-The application instructs the AI to use only the retrieved sources and avoid inventing unsupported information.
+The answer-generation prompt instructs the model to use the retrieved content as its source of information and avoid unsupported answers.
 
 ## Database Design
 
 The application uses two SQLite tables:
 
-- **items:** Stores saved notes and webpages, including title, content, source type, URL, and creation timestamp.
-- **chunks:** Stores individual text chunks and their associated embeddings. Each chunk references its original item.
+- **`items`:** Stores saved notes and webpages, including title, content, source type, URL, and creation timestamp.
+- **`chunks`:** Stores individual text chunks and their associated embeddings. Each chunk references its original item.
 
 Foreign key cascading ensures that deleting an item also deletes its associated chunks.
 
 ## Design Decisions
 
-- **SQLite:** Chosen for lightweight local persistence and straightforward setup without requiring a separate database server.
+- **SQLite:** Chosen for lightweight local persistence without requiring a separate database server.
 - **Chunking with overlap:** Helps preserve context when information spans multiple chunks.
-- **Gemini embeddings:** Provides semantic representations for both saved content and user questions.
-- **Cosine similarity:** Enables similarity-based retrieval without requiring a separate vector database for this prototype.
+- **Gemini embeddings:** Provides semantic representations of saved content and user questions.
+- **Cosine similarity:** Enables similarity-based retrieval without introducing a separate vector database.
 - **Separation of concerns:** Routes, controllers, database operations, and AI services are organized into separate modules.
+- **Structured logging:** Application events and errors are logged in a consistent structured format.
 
 ## Limitations and Future Improvements
 
-- Replace the current cosine similarity search, which loads stored embeddings from SQLite and compares them in JavaScript, with a dedicated vector search solution as the knowledge base grows.
-- Add authentication and user-specific knowledge libraries.
-- Introduce background indexing for larger documents and URLs.
-- Improve URL ingestion security and resilience for production environments.
-- Add automated tests and structured application logging.
-- Introduce pagination and filtering for larger knowledge libraries.
+- **Retrieval scalability:** The current implementation loads stored embeddings from SQLite and calculates cosine similarity in JavaScript. A dedicated vector database or indexed vector search solution would be more suitable for larger knowledge bases.
+- **Authentication:** Add user authentication and separate knowledge libraries for multiple users.
+- **Background processing:** Introduce background jobs for indexing larger documents and web pages.
+- **URL ingestion security:** Strengthen protection against server-side request forgery (SSRF), including DNS/IP validation and redirect validation.
+- **Automated testing:** Add unit, integration, and end-to-end tests.
+- **Library scalability:** Introduce pagination and filtering for larger collections.
 
 ## Running Locally
 
-Run the frontend and backend in separate terminals. Configure the Gemini API key in `server/.env` before starting the backend.
+Run the frontend and backend in separate terminals. Make sure the Gemini API key is configured in `server/.env` before starting the backend.
 
-**Note:** Never commit API keys, `.env` files, or generated database files to GitHub.
+**Security note:** Never commit API keys, `.env` files, or generated database files to GitHub. These files should remain excluded through `.gitignore`.
